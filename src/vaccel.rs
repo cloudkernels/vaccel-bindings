@@ -3,6 +3,12 @@ use std::os::raw::{c_void};
 
 pub type Result<T> = std::result::Result<T, u32>;
 
+#[repr(C)]
+pub struct VAccelArg {
+    pub len: usize,
+    pub buf: *mut u8
+}
+
 unsafe impl Send for vaccel_session {}
 
 pub fn new_session(
@@ -57,6 +63,47 @@ pub fn sgemm(
             a.as_mut_ptr(),
             b.as_mut_ptr(),
             c.as_mut_ptr(),
+        ) as u32
+    };
+
+    if err == VACCEL_OK {
+        Ok(())
+    } else {
+        Err(err)
+    }
+}
+
+pub fn gen_op(
+    sess: &mut vaccel_session,
+    out_args: &mut Vec<VAccelArg>,
+    in_args: &mut Vec<VAccelArg>,
+) -> Result<()> {
+    let err = unsafe {
+        vaccel_genop(
+            sess,
+            out_args.as_mut_ptr() as *mut c_void,
+            in_args.as_mut_ptr() as *mut c_void,
+            out_args.len() as u64,
+            in_args.len() as u64,
+        ) as u32
+    };
+
+    if err == VACCEL_OK {
+        Ok(())
+    } else {
+        Err(err)
+    }
+}
+
+pub fn no_op(
+    sess: &mut vaccel_session,
+    img: &mut [u8],
+    out_text: &mut [u8],
+    out_imgname: &mut [u8],
+) -> Result<()> {
+    let err = unsafe {
+        vaccel_noop(
+            sess,
         ) as u32
     };
 
