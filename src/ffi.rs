@@ -5726,6 +5726,106 @@ extern "C" {
     pub fn vaccel_tf_saved_model_id(model: *const vaccel_tf_saved_model) -> vaccel_id_t;
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct prof_sample {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vaccel_prof_region {
+    pub name: *const ::std::os::raw::c_char,
+    pub name_owned: bool,
+    pub nr_entries: size_t,
+    pub samples: *mut prof_sample,
+    pub size: size_t,
+}
+#[test]
+fn bindgen_test_layout_vaccel_prof_region() {
+    assert_eq!(
+        ::std::mem::size_of::<vaccel_prof_region>(),
+        40usize,
+        concat!("Size of: ", stringify!(vaccel_prof_region))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<vaccel_prof_region>(),
+        8usize,
+        concat!("Alignment of ", stringify!(vaccel_prof_region))
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<vaccel_prof_region>())).name as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(vaccel_prof_region),
+            "::",
+            stringify!(name)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<vaccel_prof_region>())).name_owned as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(vaccel_prof_region),
+            "::",
+            stringify!(name_owned)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<vaccel_prof_region>())).nr_entries as *const _ as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(vaccel_prof_region),
+            "::",
+            stringify!(nr_entries)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<vaccel_prof_region>())).samples as *const _ as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(vaccel_prof_region),
+            "::",
+            stringify!(samples)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<vaccel_prof_region>())).size as *const _ as usize },
+        32usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(vaccel_prof_region),
+            "::",
+            stringify!(size)
+        )
+    );
+}
+impl Default for vaccel_prof_region {
+    fn default() -> Self {
+        unsafe { ::std::mem::zeroed() }
+    }
+}
+extern "C" {
+    pub fn vaccel_prof_region_start(region: *mut vaccel_prof_region) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vaccel_prof_region_stop(region: *const vaccel_prof_region) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vaccel_prof_region_print(region: *const vaccel_prof_region) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vaccel_prof_region_init(
+        region: *mut vaccel_prof_region,
+        name: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn vaccel_prof_region_destroy(region: *mut vaccel_prof_region) -> ::std::os::raw::c_int;
+}
+#[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct __locale_data {
     pub _address: u8,

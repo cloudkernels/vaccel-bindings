@@ -8,6 +8,7 @@ use std::fmt;
 
 pub mod ffi;
 pub mod ops;
+pub mod prof;
 pub mod resource;
 pub mod session;
 pub mod tensorflow;
