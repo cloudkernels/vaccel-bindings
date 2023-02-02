@@ -11,7 +11,7 @@ name = "vaccel"
 path = "src/lib.rs"
 
 [dependencies]
-protocols = { git = "https://github.com/cloudkernels/vaccel-grpc", tag = "v0.3.0"  }
+protocols = { git = "https://github.com/cloudkernels/vaccel-grpc", branch = "feat_timers" }
 protobuf = "=2.27.1"
 libc = "0.2.125"
 
