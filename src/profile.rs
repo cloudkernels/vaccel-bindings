@@ -59,22 +59,35 @@ impl Timers {
         None
     }
 
-    pub fn print(&self, name: &str) {
+    fn do_print(prefix: &str, suffix: &str, name: &str, time: u128) {
+        #[cfg(debug_assertions)]
+        {
+            let m = match prefix {
+                "" => String::from(""),
+                s => format!("[{s}] "),
+            };
+            println!("{m}{name}{suffix}: {time}ms");
+        }
+    }
+
+    pub fn print(&self, name: &str, msg: &str) {
         #[cfg(debug_assertions)]
         {
             if let Some(e) = self.0.get(&name.to_string()) {
+                if e.count < 1 { return }
                 let t = e.last.as_millis();
-                println!("{name}: {t}ms");
+                Timers::do_print(msg, "", name, t);
             }
         }
     }
 
-    pub fn print_avg(&self, name: &str) {
+    pub fn print_avg(&self, name: &str, msg: &str) {
         #[cfg(debug_assertions)]
         {
             if let Some(e) = self.0.get(&name.to_string()) {
+                if e.count < 1 { return }
                 let t = e.total.as_millis() / e.count as u128;
-                println!("{name}(avg): {t}ms");
+                Timers::do_print(msg, "(avg)", name, t);
             }
         }
     }
@@ -82,13 +95,10 @@ impl Timers {
     pub fn print_all(&self, msg: &str) {
         #[cfg(debug_assertions)]
         {
-            let m = match msg {
-                "" => String::from(""),
-                s => format!("[{s}] "),
-            };
             for (n, e) in &self.0 {
+                if e.count < 1 { continue }
                 let t = e.last.as_millis();
-                println!("[{msg}] {n}: {t}ms");
+                Timers::do_print(msg, "", n, t);
             }
         }
     }
@@ -96,13 +106,10 @@ impl Timers {
     pub fn print_all_avg(&self, msg: &str) {
         #[cfg(debug_assertions)]
         {
-            let m = match msg {
-                "" => String::from(""),
-                s => format!("[{s}] "),
-            };
             for (n, e) in &self.0 {
+                if e.count < 1 { continue }
                 let t = e.total.as_millis() / e.count as u128;
-                println!("[{msg}] {n}(avg): {t}ms");
+                Timers::do_print(msg, "(avg)", n, t);
             }
         }
     }
