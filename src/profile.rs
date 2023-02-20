@@ -6,24 +6,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[derive(Debug, Clone)]
-pub struct Timers(HashMap<String, Timer>);
+#[derive(Debug, Clone, Default)]
+pub struct Timers(HashMap<String, Vec<Timer>>);
 
 #[derive(Debug, Clone)]
 pub struct Timer {
     start: Instant,
-    last: Duration,
-    total: Duration,
-    count: u64,
+    time: Duration,
 }
 
 impl Default for Timer {
     fn default() -> Self {
         Timer {
             start: Instant::now(),
-            last: Duration::default(),
-            total: Duration::default(),
-            count: 0,
+            time: Duration::default(),
         }
     }
 }
@@ -37,20 +33,20 @@ impl Timers {
         #[cfg(debug_assertions)]
         self.0
             .entry(name.to_string())
-            .and_modify(|e| e.start = Instant::now())
-            .or_insert(Timer::default());
+            .and_modify(|e| e.push(Timer::default()))
+            .or_insert(vec![Timer::default()]);
     }
 
     pub fn stop(&mut self, name: &str) {
         #[cfg(debug_assertions)]
         self.0.entry(name.to_string()).and_modify(|e| {
-            e.last = e.start.elapsed();
-            e.total += e.last;
-            e.count += 1
+            if let Some(t) = e.last_mut() {
+                t.time = t.start.elapsed();
+            }
         });
     }
 
-    pub fn get(&self, name: &str) -> Option<&Timer> {
+    pub fn get(&self, name: &str) -> Option<&Vec<Timer>> {
         #[cfg(debug_assertions)]
         {
             self.0.get(&name.to_string())
@@ -59,14 +55,23 @@ impl Timers {
         None
     }
 
-    fn do_print(prefix: &str, suffix: &str, name: &str, time: u128) {
+    pub fn get_all(&self) -> &HashMap<String, Vec<Timer>> {
+        #[cfg(debug_assertions)]
+        {
+            &self.0
+        }
+        #[cfg(not(debug_assertions))]
+        None
+    }
+
+    fn format(prefix: &str, suffix: &str, name: &str, time: u128) -> String {
         #[cfg(debug_assertions)]
         {
             let m = match prefix {
                 "" => String::from(""),
                 s => format!("[{s}] "),
             };
-            println!("{m}{name}{suffix}: {time}ms");
+            format!("{m}{name}{suffix}: {time}ns")
         }
     }
 
@@ -74,9 +79,9 @@ impl Timers {
         #[cfg(debug_assertions)]
         {
             if let Some(e) = self.0.get(&name.to_string()) {
-                if e.count < 1 { return }
-                let t = e.last.as_millis();
-                Timers::do_print(msg, "", name, t);
+                if let Some(t) = e.last() {
+                    println!("{}", Timers::format(msg, "", name, t.time.as_nanos()));
+                }
             }
         }
     }
@@ -85,9 +90,11 @@ impl Timers {
         #[cfg(debug_assertions)]
         {
             if let Some(e) = self.0.get(&name.to_string()) {
-                if e.count < 1 { return }
-                let t = e.total.as_millis() / e.count as u128;
-                Timers::do_print(msg, "(avg)", name, t);
+                let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
+                println!(
+                    "{}",
+                    Timers::format(msg, "(avg)", name, s / e.len() as u128)
+                );
             }
         }
     }
@@ -96,9 +103,9 @@ impl Timers {
         #[cfg(debug_assertions)]
         {
             for (n, e) in &self.0 {
-                if e.count < 1 { continue }
-                let t = e.last.as_millis();
-                Timers::do_print(msg, "", n, t);
+                if let Some(t) = e.last() {
+                    println!("{}", Timers::format(msg, "", n, t.time.as_nanos()));
+                }
             }
         }
     }
@@ -107,10 +114,34 @@ impl Timers {
         #[cfg(debug_assertions)]
         {
             for (n, e) in &self.0 {
-                if e.count < 1 { continue }
-                let t = e.total.as_millis() / e.count as u128;
-                Timers::do_print(msg, "(avg)", n, t);
+                let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
+                println!("{}", Timers::format(msg, "(avg)", n, s / e.len() as u128));
             }
+        }
+    }
+
+    pub fn print_all_avg_to_buf(&self, msg: &str) -> String {
+        #[cfg(debug_assertions)]
+        {
+            let mut buf = Vec::new();
+            for (n, e) in &self.0 {
+                let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
+                buf.push(Timers::format(msg, "(avg)", n, s / e.len() as u128));
+            }
+            buf.join("\n")
+        }
+    }
+
+    pub fn print_all_to_buf(&self, msg: &str) -> String {
+        #[cfg(debug_assertions)]
+        {
+            let mut buf = Vec::new();
+            for (n, e) in &self.0 {
+                if let Some(t) = e.last() {
+                    buf.push(Timers::format(msg, "", n, t.time.as_nanos()));
+                }
+            }
+            buf.join("\n")
         }
     }
 }
@@ -121,31 +152,35 @@ fn main() {
 
     timers.start("test");
     #[cfg(debug_assertions)]
-    sleep(Duration::from_secs(2));
+    sleep(Duration::from_secs(1));
     timers.stop("test");
-    timers.print("test");
+    timers.print("test", "");
 
     timers.start("test");
     #[cfg(debug_assertions)]
     sleep(Duration::from_secs(2));
     timers.stop("test");
-    timers.print("test");
+    timers.print("test", "");
 
     timers.start("test1");
     #[cfg(debug_assertions)]
-    sleep(Duration::from_secs(2));
+    sleep(Duration::from_secs(1));
     timers.stop("test1");
 
-    timers.print_avg("test");
-    timers.print_avg("test2");
+    timers.print_avg("test", "");
+    timers.stop("test2");
+    timers.print_avg("test2", "");
     #[cfg(debug_assertions)]
     println!("ALL:");
-    timers.print_all();
+    timers.print_all("");
 
     #[cfg(debug_assertions)]
     {
         println!("{:?}", timers.get("test"));
         println!("{:?}", timers.get("test2"));
     }
+
+    #[cfg(debug_assertions)]
+    println!("{}", timers.print_all_avg_to_buf("vaccel"));
 }
 */
