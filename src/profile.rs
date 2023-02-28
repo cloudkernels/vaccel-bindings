@@ -29,6 +29,10 @@ impl Timers {
         Timers(HashMap::new())
     }
 
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
     pub fn start(&mut self, name: &str) {
         #[cfg(debug_assertions)]
         self.0
@@ -64,14 +68,14 @@ impl Timers {
         None
     }
 
-    fn format(prefix: &str, suffix: &str, name: &str, time: u128) -> String {
+    fn format(prefix: &str, suffix: &str, name: &str, time: u128, entries: usize) -> String {
         #[cfg(debug_assertions)]
         {
             let m = match prefix {
                 "" => String::from(""),
                 s => format!("[{s}] "),
             };
-            format!("{m}{name}{suffix}: {time}ns")
+            format!("{m}{name}{suffix}: total_time: {time} nsec nr_entries: {entries}")
         }
     }
 
@@ -80,20 +84,20 @@ impl Timers {
         {
             if let Some(e) = self.0.get(&name.to_string()) {
                 if let Some(t) = e.last() {
-                    println!("{}", Timers::format(msg, "", name, t.time.as_nanos()));
+                    println!("{}", Timers::format(msg, "", name, t.time.as_nanos(), 1));
                 }
             }
         }
     }
 
-    pub fn print_avg(&self, name: &str, msg: &str) {
+    pub fn print_total(&self, name: &str, msg: &str) {
         #[cfg(debug_assertions)]
         {
             if let Some(e) = self.0.get(&name.to_string()) {
                 let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
                 println!(
                     "{}",
-                    Timers::format(msg, "(avg)", name, s / e.len() as u128)
+                    Timers::format(msg, "", name, s, e.len())
                 );
             }
         }
@@ -104,29 +108,29 @@ impl Timers {
         {
             for (n, e) in &self.0 {
                 if let Some(t) = e.last() {
-                    println!("{}", Timers::format(msg, "", n, t.time.as_nanos()));
+                    println!("{}", Timers::format(msg, "", n, t.time.as_nanos(), 1));
                 }
             }
         }
     }
 
-    pub fn print_all_avg(&self, msg: &str) {
+    pub fn print_all_total(&self, msg: &str) {
         #[cfg(debug_assertions)]
         {
             for (n, e) in &self.0 {
                 let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
-                println!("{}", Timers::format(msg, "(avg)", n, s / e.len() as u128));
+                println!("{}", Timers::format(msg, "", n, s, e.len()));
             }
         }
     }
 
-    pub fn print_all_avg_to_buf(&self, msg: &str) -> String {
+    pub fn print_all_total_to_buf(&self, msg: &str) -> String {
         #[cfg(debug_assertions)]
         {
             let mut buf = Vec::new();
             for (n, e) in &self.0 {
                 let s: u128 = e.iter().map(|x| x.time.as_nanos()).sum();
-                buf.push(Timers::format(msg, "(avg)", n, s / e.len() as u128));
+                buf.push(Timers::format(msg, "", n, s, e.len()));
             }
             buf.join("\n")
         }
@@ -138,7 +142,7 @@ impl Timers {
             let mut buf = Vec::new();
             for (n, e) in &self.0 {
                 if let Some(t) = e.last() {
-                    buf.push(Timers::format(msg, "", n, t.time.as_nanos()));
+                    buf.push(Timers::format(msg, "", n, t.time.as_nanos(), 1));
                 }
             }
             buf.join("\n")
