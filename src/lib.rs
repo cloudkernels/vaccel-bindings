@@ -11,7 +11,7 @@ pub mod ops;
 pub mod resource;
 pub mod session;
 pub mod tensorflow;
-pub mod profile;
+pub mod profiling;
 
 pub use resource::Resource;
 pub use session::Session;
